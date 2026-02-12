@@ -81,36 +81,13 @@ export async function POST(req: Request) {
       );
     }
 
-    let record;
-    try {
-      record = await prisma.attendanceRecord.update({
-        where: { id: open.id },
-        data: {
-          checkOutAt: now,
-          checkOutEarlyReason: isEarlyOut ? earlyReason : null,
-        },
-      });
-    } catch (updateErr: unknown) {
-      const msg = String(updateErr instanceof Error ? updateErr.message : (updateErr as { message?: string })?.message ?? '');
-      if (msg.includes('checkOutEarlyReason') || msg.includes('Unknown argument')) {
-        record = await prisma.attendanceRecord.update({
-          where: { id: open.id },
-          data: { checkOutAt: now },
-        });
-        if (isEarlyOut && earlyReason && record) {
-          try {
-            await (prisma.attendanceRecord.update as (args: { where: { id: string }; data: { checkOutEarlyReason: string } }) => Promise<unknown>)({
-              where: { id: open.id },
-              data: { checkOutEarlyReason: earlyReason },
-            });
-          } catch {
-            // column may not exist until prisma generate is run
-          }
-        }
-      } else {
-        throw updateErr;
-      }
-    }
+    const record = await prisma.attendanceRecord.update({
+      where: { id: open.id },
+      data: {
+        checkOutAt: now,
+        checkOutEarlyReason: isEarlyOut ? earlyReason : null,
+      },
+    });
     return NextResponse.json(record);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Server error';

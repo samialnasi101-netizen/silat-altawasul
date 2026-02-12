@@ -104,37 +104,15 @@ export async function POST(req: Request) {
       );
     }
 
-    let record: { id: string; userId: string; checkInAt: Date; checkOutAt: Date | null; lat: number | null; lng: number | null };
-    try {
-      record = await prisma.attendanceRecord.create({
-        data: {
-          userId,
-          checkInAt: now,
-          lat,
-          lng,
-          checkInLateReason: isLate ? lateReason : null,
-        },
-      });
-    } catch (createErr: unknown) {
-      const msg = String(createErr instanceof Error ? createErr.message : (createErr as { message?: string })?.message ?? '');
-      if (msg.includes('checkInLateReason') || msg.includes('Unknown argument')) {
-        record = await prisma.attendanceRecord.create({
-          data: { userId, checkInAt: now, lat, lng },
-        });
-        if (isLate && lateReason && record.id) {
-          try {
-            await (prisma.attendanceRecord.update as (args: { where: { id: string }; data: { checkInLateReason: string } }) => Promise<unknown>)({
-              where: { id: record.id },
-              data: { checkInLateReason: lateReason },
-            });
-          } catch {
-            // column may not exist yet
-          }
-        }
-      } else {
-        throw createErr;
-      }
-    }
+    const record = await prisma.attendanceRecord.create({
+      data: {
+        userId,
+        checkInAt: now,
+        lat,
+        lng,
+        checkInLateReason: isLate ? lateReason : null,
+      },
+    });
     return NextResponse.json(record);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Server error';
