@@ -329,7 +329,7 @@ export default function HistoricalList({ initialReports }: { initialReports: Rep
       const buf = await file.arrayBuffer();
       const wb = new ExcelJS.Workbook();
       await wb.xlsx.load(buf);
-      let ws = wb.worksheets[0];
+      const ws = wb.worksheets[0];
       if (!ws) {
         setParseError('الملف لا يحتوي على أوراق');
         return;

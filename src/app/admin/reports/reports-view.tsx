@@ -170,7 +170,7 @@ export default function ReportsView() {
       const headers = ['اسم الموظف', 'رقم الموظف', 'أيام الحضور', 'أيام الغياب', 'دقائق التأخر', 'ساعات التأخر'];
       const headerRow = ws.addRow(headers);
       headerRow.height = 22;
-      headerRow.eachCell((cell, colNumber) => {
+      headerRow.eachCell((cell) => {
         cell.fill = headerFill;
         cell.font = headerFont;
         cell.border = thinBorder;
