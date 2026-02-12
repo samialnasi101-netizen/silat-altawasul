@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
@@ -16,6 +17,8 @@ import {
   LogOut,
   Lock,
   RotateCcw,
+  Menu,
+  X,
 } from 'lucide-react';
 
 const staffLinks = [
@@ -45,20 +48,51 @@ export function DashboardNav({
 }) {
   const pathname = usePathname();
   const links = isAdmin ? adminLinks : staffLinks;
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const closeMobile = () => setMobileOpen(false);
 
   return (
-    <aside className="w-64 min-h-screen glass border-l border-white/10 flex flex-col">
+    <>
+      {/* Mobile header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 glass border-b border-white/10 flex items-center justify-between px-4 py-3">
+        <h2 className="font-bold text-white text-lg">صلة التواصل</h2>
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="text-white p-2 rounded-lg hover:bg-white/10"
+        >
+          {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={closeMobile}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed md:static inset-y-0 right-0 z-50
+        w-64 min-h-screen glass border-l border-white/10 flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        ${mobileOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
+        md:transform-none
+      `}>
       <div className="p-6 border-b border-white/10">
         <h2 className="font-bold text-white text-lg">صلة التواصل</h2>
         <p className="text-white/60 text-sm mt-0.5">
           {isAdmin ? 'مدير النظام' : 'موظف'}
         </p>
       </div>
-      <nav className="flex-1 p-3 space-y-1">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {links.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
             href={href}
+            onClick={closeMobile}
             className={`flex items-center gap-3 rounded-xl px-4 py-3 transition ${
               pathname === href
                 ? 'bg-emerald-500/20 text-emerald-300'
@@ -78,6 +112,7 @@ export function DashboardNav({
           <>
             <Link
               href="/admin/change-password"
+              onClick={closeMobile}
               className={`flex items-center gap-3 rounded-xl px-4 py-3 transition ${
                 pathname === '/admin/change-password' ? 'bg-emerald-500/20 text-emerald-300' : 'text-white/80 hover:bg-white/10 hover:text-white'
               }`}
@@ -87,6 +122,7 @@ export function DashboardNav({
             </Link>
             <Link
               href="/admin/reset-system"
+              onClick={closeMobile}
               className={`flex items-center gap-3 rounded-xl px-4 py-3 transition ${
                 pathname === '/admin/reset-system' ? 'bg-red-500/20 text-red-300' : 'text-white/80 hover:bg-red-500/10 hover:text-red-300'
               }`}
@@ -104,6 +140,7 @@ export function DashboardNav({
           <span>تسجيل الخروج</span>
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

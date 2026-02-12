@@ -12,9 +12,9 @@ export default async function AdminLayout({
   const role = (session.user as { role?: string }).role;
   if (role !== 'ADMIN') redirect('/dashboard');
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col md:flex-row">
       <DashboardNav user={session.user} isAdmin />
-      <main className="flex-1 p-6 overflow-auto">{children}</main>
+      <main className="flex-1 p-4 md:p-6 overflow-auto pt-16 md:pt-6">{children}</main>
     </div>
   );
 }
