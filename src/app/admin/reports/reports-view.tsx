@@ -154,7 +154,7 @@ export default function ReportsView() {
     setLoading(true);
     try {
       const res = await fetch(`/api/reports/attendance?year=${year}&month=${month}`);
-      const data: AttendanceData = await res.json();
+      const data: AttendanceData & { error?: string } = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل التحميل');
 
       const wb = new ExcelJS.Workbook();
