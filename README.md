@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# صلة التواصل — SILAT ALTAWASUL
 
-## Getting Started
+نظام ويب لإدارة الفروع، الموظفين، الحضور، التبرعات، الجمعيات والمشاريع مع لوحة تحكم لحظية وتقارير حالية وتاريخية.
 
-First, run the development server:
+## النشر عبر GitHub (بدون تعديل الكود)
+
+1. **ادفع المشروع إلى GitHub**
+   - انسخ مجلد `silat-altawasul` كمجلد الجذر للمستودع، أو انسخ محتوياته إلى مستودع جديد.
+
+2. **ربط بـ Vercel (مجاني)**
+   - ادخل إلى [vercel.com](https://vercel.com) وسجّل الدخول بـ GitHub.
+   - New Project → استورد مستودع المشروع.
+   - **Environment Variables** (مهم):
+     - `DATABASE_URL`: رابط PostgreSQL (مثلاً من [Supabase](https://supabase.com) أو [Neon](https://neon.tech) — إنشاء مشروع ونسخ Connection string).
+     - `NEXTAUTH_SECRET`: أي نص عشوائي طويل (مثلاً من [generate-secret.vercel.app](https://generate-secret.vercel.app/32)).
+     - `NEXTAUTH_URL`: عنوان الموقع بعد النشر (مثل `https://your-app.vercel.app`).
+   - Deploy. بعد الانتهاء، في تبويب Settings → Environment Variables غيّر `NEXTAUTH_URL` إلى الرابط الفعلي للموقع ثم أعد النشر مرة واحدة.
+
+3. **تهيئة قاعدة البيانات**
+   - على جهازك (أو في سكريبت تشغيل مرة واحدة):
+     - ضع نفس `DATABASE_URL` في ملف `.env` محلي.
+     - نفّذ: `npx prisma db push`
+     - ثم: `npm run db:seed` لإنشاء مستخدم المدير الافتراضي.
+   - بيانات الدخول الافتراضية للمدير بعد البذر:
+     - **المعرف:** `admin`
+     - **كلمة المرور:** `admin123`
+   - غيّر كلمة المرور فورًا من لوحة المدير (إدارة الموظفين أو من قاعدة البيانات).
+
+## استخدام Neon (قاعدة بيانات مجانية)
+
+1. ادخل إلى [neon.tech](https://neon.tech) وسجّل دخول (مجاني).
+2. **Create a project** → اختر اسمًا ومنطقة قريبة.
+3. من لوحة المشروع انسخ **Connection string** (يبدأ بـ `postgresql://`).
+4. ضعه في ملف `.env` في السطر `DATABASE_URL=...` (يُفضّل أن ينتهي بـ `?sslmode=require`).
+5. نفّذ: `npx prisma db push` ثم `npm run db:seed` أو افتح `/api/setup` في المتصفح.
+
+## التشغيل محلياً
 
 ```bash
+cd silat-altawasul
+cp .env.example .env
+# عدّل .env: DATABASE_URL، NEXTAUTH_SECRET، NEXTAUTH_URL=http://localhost:3000
+npm install
+npx prisma db push
+npm run db:seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+افتح [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## الأدوار
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **مدير (Admin):** مدير واحد، صلاحية كاملة، إدارة الفروع والجمعيات والمشاريع والموظفين، رفع التقارير التاريخية، وعرض كل التقارير.
+- **موظف (Staff):** مرتبط بفرع واحد، يسجل الحضور والتبرعات، يرى فقط بياناته ومشاريع فرعه.
 
-## Learn More
+## التقنيات
 
-To learn more about Next.js, take a look at the following resources:
+- Next.js 14 (App Router), TypeScript, Tailwind CSS, Prisma, NextAuth.js, PostgreSQL.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## ملاحظات النشر
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- لا حاجة لتعديل الكود عند النشر: كل الإعدادات تتم عبر متغيرات البيئة.
+- يُفضّل استخدام قاعدة بيانات PostgreSQL مُدارة (Supabase / Neon / Railway) وربطها عبر `DATABASE_URL` فقط.

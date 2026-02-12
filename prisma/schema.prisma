@@ -1,0 +1,127 @@
+// SILAT ALTAWASUL - Database Schema
+// Deploy-ready: use DATABASE_URL in .env (e.g. Supabase, Neon, Railway)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+model User {
+  id            String    @id @default(cuid())
+  staffId       String    @unique  // login ID (e.g. employee number)
+  passwordHash  String
+  role          Role      @default(STAFF)
+  name          String
+  active        Boolean   @default(true)  // false = deactivated, cannot login
+  branchId      String?
+  branch        Branch?   @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  workStart     String?   // "09:00"
+  workEnd       String?   // "17:00"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  attendance    AttendanceRecord[]
+  donations     Donation[]
+  donationEdits DonationEdit[]
+}
+
+model Branch {
+  id          String    @id @default(cuid())
+  name        String
+  location    String?   // geographic location / address
+  lat         Float?    // for attendance geo check
+  lng         Float?
+  radiusMeters Int?     @default(500) // attendance allowed within this radius
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  users       User[]
+  donations   Donation[]
+  branchProjects BranchProject[]
+}
+
+model Charity {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  projects    Project[]
+}
+
+model Project {
+  id         String    @id @default(cuid())
+  name       String
+  charityId  String
+  charity    Charity   @relation(fields: [charityId], references: [id], onDelete: Cascade)
+  branchProjects BranchProject[]
+  donations  Donation[]
+}
+
+model BranchProject {
+  id        String   @id @default(cuid())
+  branchId  String
+  branch    Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([branchId, projectId])
+}
+
+model AttendanceRecord {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkInAt           DateTime
+  checkOutAt          DateTime?
+  lat                 Float?
+  lng                 Float?
+  checkInLateReason   String?  // if late &gt; 15 min after work start
+  checkOutEarlyReason String?  // if checkout &gt; 10 min before work end
+  createdAt           DateTime @default(now())
+}
+
+model Donation {
+  id         String   @id @default(cuid())
+  amount     Decimal  @db.Decimal(14, 2)
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  branchId   String
+  branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  edits      DonationEdit[]
+}
+
+model DonationEdit {
+  id         String   @id @default(cuid())
+  donationId String
+  donation   Donation @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  previousAmount Decimal @db.Decimal(14, 2)
+  newAmount  Decimal  @db.Decimal(14, 2)
+  createdAt  DateTime @default(now())
+}
+
+model HistoricalReport {
+  id          String   @id @default(cuid())
+  title       String
+  year        Int
+  reportDate  DateTime? // optional date within the year
+  fileUrl     String?   // stored file URL (e.g. Supabase Storage / Vercel Blob)
+  fileName    String?
+  summary     String?   // optional aggregated numbers JSON or text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

@@ -3,25 +3,103 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --glass-bg: rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  --accent: 160 84% 39%;
+  --accent-hover: 160 84% 45%;
+  --bg-base: 220 25% 8%;
+  --text-primary: 210 20% 98%;
+  --text-muted: 215 16% 65%;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  direction: rtl;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  color: hsl(var(--text-primary));
+  background: linear-gradient(145deg, hsl(220 28% 6%) 0%, hsl(225 25% 10%) 50%, hsl(220 30% 8%) 100%);
+  font-family: 'Segoe UI', 'Tajawal', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glass panels */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.glass-card {
+  @apply glass rounded-2xl p-6;
+}
+
+/* Buttons */
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 font-medium transition-all;
+  background: hsl(var(--accent));
+  color: white;
+}
+.btn-primary:hover {
+  background: hsl(var(--accent-hover));
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px hsla(var(--accent), 0.4);
+}
+
+.btn-ghost {
+  @apply rounded-xl px-4 py-2 text-white/80 transition hover:bg-white/10 hover:text-white;
+}
+
+/* Inputs */
+.input-glass {
+  @apply w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-white placeholder:text-white/40 focus:border-emerald-500/60 focus:outline-none focus:ring-2 focus:ring-emerald-500/30;
+}
+
+/* Select dropdown options - light background so text is always readable */
+select.input-glass option,
+select option {
+  background: #f1f5f9;
+  color: #0f172a;
+  padding: 0.5rem;
+}
+/* Keep select closed state visible; some browsers need this for options */
+select.input-glass {
+  cursor: pointer;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.3);
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+  .text-balance { text-wrap: balance; }
 }
