@@ -81,7 +81,7 @@ export default function ReportsView() {
     setLoading(true);
     try {
       const res = await fetch(`/api/reports/charity-monthly?charityId=${encodeURIComponent(charityId)}&year=${year}&month=${month}`);
-      const data: CharityMonthlyData & { totalDonationsInRange?: number } = await res.json();
+      const data: CharityMonthlyData & { totalDonationsInRange?: number; error?: string } = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل التحميل');
       if ((data.totalDonationsInRange ?? 0) === 0) {
         setError('لا توجد تبرعات مسجلة لهذه الجمعية في الشهر والسنة المحددين. تحقق من الجمعية والشهر.');
