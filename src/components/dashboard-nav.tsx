@@ -73,21 +73,22 @@ export function DashboardNav({
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar: scrollable on mobile so bottom options (logout etc) are reachable */}
       <aside className={`
         fixed md:static inset-y-0 right-0 z-50
-        w-64 min-h-screen glass border-l border-white/10 flex flex-col
+        w-64 min-h-screen max-h-screen glass border-l border-white/10 flex flex-col
+        overflow-y-auto md:overflow-y-visible
         transform transition-transform duration-300 ease-in-out
         ${mobileOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
         md:transform-none
       `}>
-      <div className="p-6 border-b border-white/10">
+      <div className="p-6 border-b border-white/10 shrink-0">
         <h2 className="font-bold text-white text-lg">صلة التواصل</h2>
         <p className="text-white/60 text-sm mt-0.5">
           {isAdmin ? 'مدير النظام' : 'موظف'}
         </p>
       </div>
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 min-h-0 p-3 space-y-1 overflow-y-auto">
         {links.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
@@ -104,7 +105,7 @@ export function DashboardNav({
           </Link>
         ))}
       </nav>
-      <div className="p-3 border-t border-white/10">
+      <div className="p-3 border-t border-white/10 shrink-0">
         <p className="text-white/60 text-sm px-4 py-2 truncate" title={user?.name ?? undefined}>
           {user?.name ?? user?.staffId}
         </p>
