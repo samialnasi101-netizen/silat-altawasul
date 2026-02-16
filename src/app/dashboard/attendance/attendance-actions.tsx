@@ -39,7 +39,6 @@ export default function AttendanceActions({
 
   const canCheckIn = currentMinutes >= earliestCheckInM && currentMinutes <= workEndM;
   const canCheckOut = currentMinutes >= workEndM && currentMinutes <= latestCheckOutM;
-  const now = currentTime;
 
   const getLocation = (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {
