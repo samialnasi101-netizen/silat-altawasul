@@ -1,19 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
+import {
+  getSaudiDateParts,
+  parseWorkTimeToSaudiToday,
+} from '@/lib/saudi-time';
 
-function parseTimeToToday(timeStr: string): Date {
-  if (!timeStr || typeof timeStr !== 'string') {
-    const d = new Date();
-    d.setHours(9, 0, 0, 0);
-    return d;
-  }
-  const parts = timeStr.trim().split(':');
-  const h = Math.min(23, Math.max(0, parseInt(parts[0], 10) || 0));
-  const m = Math.min(59, Math.max(0, parseInt(parts[1], 10) || 0));
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d;
+const NO_CHECKOUT_REASON = 'الموظف لم يسجل خروج من الفرع';
+
+/** Start of today 00:00 in Saudi as UTC timestamp. */
+function startOfTodaySaudi(): Date {
+  const { year, month, day } = getSaudiDateParts(new Date());
+  return new Date(Date.UTC(year, month - 1, day, -3, 0, 0, 0));
 }
 
 export async function POST(req: Request) {
@@ -62,7 +60,32 @@ export async function POST(req: Request) {
     }
 
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = startOfTodaySaudi();
+
+    // If user has an open (no checkout) record, handle it
+    const openRecord = await prisma.attendanceRecord.findFirst({
+      where: { userId, checkOutAt: null },
+      orderBy: { checkInAt: 'desc' },
+    });
+    if (openRecord) {
+      const openCheckIn = new Date(openRecord.checkInAt);
+      if (openCheckIn < startOfToday) {
+        // Previous day: auto-checkout with reason, then allow check-in
+        await prisma.attendanceRecord.update({
+          where: { id: openRecord.id },
+          data: {
+            checkOutAt: now,
+            checkOutEarlyReason: NO_CHECKOUT_REASON,
+          },
+        });
+      } else {
+        return NextResponse.json(
+          { error: 'لديك حضور مفتوح لهذا اليوم. لا يمكن تسجيل حضور ثانٍ قبل تسجيل الانصراف.' },
+          { status: 400 }
+        );
+      }
+    }
+
     const anyToday = await prisma.attendanceRecord.findFirst({
       where: {
         userId,
@@ -78,9 +101,9 @@ export async function POST(req: Request) {
 
     const workStart = user.workStart || '09:00';
     const workEnd = user.workEnd || '17:00';
-    const workStartToday = parseTimeToToday(workStart);
-    const workEndToday = parseTimeToToday(workEnd);
-    const earliestCheckIn = new Date(workStartToday.getTime() - 10 * 60 * 1000); // 10 min before دوام
+    const workStartToday = parseWorkTimeToSaudiToday(workStart);
+    const workEndToday = parseWorkTimeToSaudiToday(workEnd);
+    const earliestCheckIn = new Date(workStartToday.getTime() - 10 * 60 * 1000);
 
     if (now < earliestCheckIn) {
       return NextResponse.json(

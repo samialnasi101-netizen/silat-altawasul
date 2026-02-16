@@ -3,15 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogIn, LogOut } from 'lucide-react';
-
-function parseTimeToToday(timeStr: string): Date {
-  const parts = (timeStr || '09:00').split(':');
-  const h = Math.min(23, Math.max(0, parseInt(parts[0], 10) || 0));
-  const m = Math.min(59, Math.max(0, parseInt(parts[1], 10) || 0));
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d;
-}
+import {
+  getSaudiTimeParts,
+  timeStringToMinutes,
+  formatTimeSaudi,
+} from '@/lib/saudi-time';
 
 export default function AttendanceActions({
   hasOpenAttendance,
@@ -34,6 +30,17 @@ export default function AttendanceActions({
     return () => clearInterval(t);
   }, []);
 
+  const saudiNow = getSaudiTimeParts(currentTime);
+  const currentMinutes = saudiNow.hours * 60 + saudiNow.minutes;
+  const workStartM = timeStringToMinutes(workStart);
+  const workEndM = timeStringToMinutes(workEnd);
+  const earliestCheckInM = workStartM - 10;
+  const latestCheckOutM = workEndM + 15;
+
+  const canCheckIn = currentMinutes >= earliestCheckInM && currentMinutes <= workEndM;
+  const canCheckOut = currentMinutes >= workEndM && currentMinutes <= latestCheckOutM;
+  const now = currentTime;
+
   const getLocation = (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(
@@ -43,13 +50,6 @@ export default function AttendanceActions({
       );
     });
   };
-
-  const workStartToday = parseTimeToToday(workStart);
-  const workEndToday = parseTimeToToday(workEnd);
-  const earliestCheckIn = new Date(workStartToday.getTime() - 10 * 60 * 1000);
-  const canCheckIn = currentTime >= earliestCheckIn && currentTime <= workEndToday;
-  const canCheckOut = currentTime >= workEndToday;
-  const now = currentTime;
 
   const checkIn = async () => {
     setError('');
@@ -81,8 +81,7 @@ export default function AttendanceActions({
       return;
     }
 
-    const lateThreshold = new Date(workStartToday.getTime() + 15 * 60 * 1000);
-    const isLate = now > lateThreshold;
+    const isLate = currentMinutes > workStartM + 15;
     const body: { lat: number | null; lng: number | null; lateReason?: string } = { lat, lng };
     if (isLate && lateReason.trim().length >= 3) body.lateReason = lateReason.trim();
 
@@ -146,12 +145,13 @@ export default function AttendanceActions({
 
   return (
     <div className="glass-card space-y-4">
+      <p className="text-white/70 text-sm">التوقيت: السعودية {formatTimeSaudi(currentTime)}</p>
       {!hasOpenAttendance ? (
         <>
-          {!canCheckIn && currentTime < earliestCheckIn && (
+          {!canCheckIn && currentMinutes < earliestCheckInM && (
             <p className="text-amber-200/90 text-sm">يمكن تسجيل الحضور قبل 10 دقائق فقط من بداية الدوام ({workStart}).</p>
           )}
-          {!canCheckIn && currentTime > workEndToday && (
+          {!canCheckIn && currentMinutes > workEndM && (
             <p className="text-amber-200/90 text-sm">انتهى وقت الدوام. لا يمكن تسجيل الحضور بعد نهاية الدوام ({workEnd}).</p>
           )}
           <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
@@ -179,8 +179,11 @@ export default function AttendanceActions({
         </>
       ) : (
         <>
-          {!canCheckOut && (
-            <p className="text-amber-200/90 text-sm">يمكن تسجيل الانصراف عند نهاية الدوام فقط ({workEnd}). يجب أن تكون في موقع الفرع.</p>
+          {!canCheckOut && currentMinutes < workEndM && (
+            <p className="text-amber-200/90 text-sm">يمكن تسجيل الانصراف من نهاية الدوام ({workEnd}) حتى 15 دقيقة بعدها. يجب أن تكون في موقع الفرع.</p>
+          )}
+          {!canCheckOut && currentMinutes > latestCheckOutM && (
+            <p className="text-amber-200/90 text-sm">انتهى وقت تسجيل الانصراف يدوياً. سيتم إغلاق الحضور تلقائياً (الموظف لم يسجل خروج من الفرع). حدّث الصفحة.</p>
           )}
           {branchNeedsLocation && canCheckOut && (
             <p className="text-amber-200/90 text-sm">الانصراف من داخل الفرع فقط: سيتم التحقق من موقعك.</p>

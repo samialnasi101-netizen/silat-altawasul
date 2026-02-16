@@ -1,20 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
-
-function parseTimeToToday(timeStr: string): Date {
-  if (!timeStr || typeof timeStr !== 'string') {
-    const d = new Date();
-    d.setHours(17, 0, 0, 0);
-    return d;
-  }
-  const parts = timeStr.trim().split(':');
-  const h = Math.min(23, Math.max(0, parseInt(parts[0], 10) || 0));
-  const m = Math.min(59, Math.max(0, parseInt(parts[1], 10) || 0));
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d;
-}
+import { parseWorkTimeToSaudiToday } from '@/lib/saudi-time';
 
 export async function POST(req: Request) {
   try {
@@ -37,12 +24,19 @@ export async function POST(req: Request) {
 
     const now = new Date();
     const workEnd = open.user.workEnd || '17:00';
-    const workEndToday = parseTimeToToday(workEnd);
+    const workEndToday = parseWorkTimeToSaudiToday(workEnd);
+    const latestCheckOut = new Date(workEndToday.getTime() + 15 * 60 * 1000); // 15 min after work end
 
-    // انصراف عند نهاية الدوام فقط (أو بعدها)
+    // انصراف من نهاية الدوام حتى 15 دقيقة بعدها فقط
     if (now < workEndToday) {
       return NextResponse.json(
-        { error: `يمكن تسجيل الانصراف عند نهاية الدوام فقط (${workEnd}).` },
+        { error: `يمكن تسجيل الانصراف من نهاية الدوام (${workEnd}) حتى 15 دقيقة بعدها فقط.` },
+        { status: 400 }
+      );
+    }
+    if (now > latestCheckOut) {
+      return NextResponse.json(
+        { error: 'انتهى وقت تسجيل الانصراف يدوياً (15 دقيقة بعد نهاية الدوام). سيتم إغلاق الحضور تلقائياً عند فتح الصفحة.' },
         { status: 400 }
       );
     }
@@ -72,20 +66,11 @@ export async function POST(req: Request) {
       }
     }
 
-    const earlyThreshold = new Date(workEndToday.getTime() - 10 * 60 * 1000);
-    const isEarlyOut = now < earlyThreshold;
-    if (isEarlyOut && (!earlyReason || earlyReason.length < 3)) {
-      return NextResponse.json(
-        { error: 'الانصراف قبل 10 دقائق من نهاية الدوام يتطلب إدخال سبب.', code: 'EARLY_REASON_REQUIRED' },
-        { status: 400 }
-      );
-    }
-
     const record = await prisma.attendanceRecord.update({
       where: { id: open.id },
       data: {
         checkOutAt: now,
-        checkOutEarlyReason: isEarlyOut ? earlyReason : null,
+        checkOutEarlyReason: earlyReason && earlyReason.trim().length >= 3 ? earlyReason.trim() : null,
       },
     });
     return NextResponse.json(record);

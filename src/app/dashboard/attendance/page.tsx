@@ -1,6 +1,13 @@
 import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
+import { closeStaleOpenAttendance } from '@/lib/attendance-server';
+import { getSaudiDateParts, formatTimeSaudi, formatDateSaudi } from '@/lib/saudi-time';
 import AttendanceActions from './attendance-actions';
+
+function startOfTodaySaudi(): Date {
+  const { year, month, day } = getSaudiDateParts(new Date());
+  return new Date(Date.UTC(year, month - 1, day, -3, 0, 0, 0));
+}
 
 export default async function StaffAttendancePage() {
   const session = await getSession();
@@ -8,21 +15,22 @@ export default async function StaffAttendancePage() {
   const branchId = (session?.user as { branchId?: string })?.branchId;
   if (!userId) return null;
 
-  const [records, user] = await Promise.all([
-    prisma.attendanceRecord.findMany({
-      where: { userId },
-      orderBy: { checkInAt: 'desc' },
-      take: 30,
-    }),
-    branchId
-      ? prisma.user.findUnique({
-          where: { id: userId },
-          select: { workStart: true, workEnd: true, branch: { select: { lat: true, lng: true, radiusMeters: true } } },
-        })
-      : null,
-  ]);
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  const user = branchId
+    ? await prisma.user.findUnique({
+        where: { id: userId },
+        select: { workStart: true, workEnd: true, branch: { select: { lat: true, lng: true, radiusMeters: true } } },
+      })
+    : null;
+
+  await closeStaleOpenAttendance(userId, user?.workEnd ?? '17:00');
+
+  const records = await prisma.attendanceRecord.findMany({
+    where: { userId },
+    orderBy: { checkInAt: 'desc' },
+    take: 30,
+  });
+
+  const todayStart = startOfTodaySaudi();
   const todayRecord = records.find((r) => new Date(r.checkInAt) >= todayStart && !r.checkOutAt);
   const branchNeedsLocation =
     user?.branch != null &&
@@ -51,8 +59,8 @@ export default async function StaffAttendancePage() {
           {records.map((r) => (
             <li key={r.id} className="flex justify-between items-center py-2 border-b border-white/10 last:border-0">
               <span className="text-white/80">
-                {new Date(r.checkInAt).toLocaleDateString('ar-SA')} — دخول {new Date(r.checkInAt).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
-                {r.checkOutAt && ` / خروج ${new Date(r.checkOutAt).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}`}
+                {formatDateSaudi(new Date(r.checkInAt))} — دخول {formatTimeSaudi(new Date(r.checkInAt))}
+                {r.checkOutAt && ` / خروج ${formatTimeSaudi(new Date(r.checkOutAt))}`}
               </span>
               {!r.checkOutAt && <span className="text-emerald-400 text-sm">حاضر الآن</span>}
             </li>

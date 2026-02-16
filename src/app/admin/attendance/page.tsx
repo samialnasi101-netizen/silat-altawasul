@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Suspense } from "react";
+import { formatDateSaudi, formatTimeSaudi } from "@/lib/saudi-time";
 import AttendanceDateFilter from "./attendance-date-filter";
 
 function getDayRange(dateStr: string | null) {
@@ -61,8 +62,8 @@ export default async function AdminAttendancePage({
               <tr key={r.id} className="border-b border-white/5">
                 <td className="p-4 text-white/80">{r.user.name}</td>
                 <td className="p-4 text-white/80">{r.user.branch?.name ?? "-"}</td>
-                <td className="p-4 text-white/80">{new Date(r.checkInAt).toLocaleString("ar-SA")}</td>
-                <td className="p-4 text-white/80">{r.checkOutAt ? new Date(r.checkOutAt).toLocaleString("ar-SA") : "- حاضر"}</td>
+                <td className="p-4 text-white/80">{formatDateSaudi(new Date(r.checkInAt))} {formatTimeSaudi(new Date(r.checkInAt))}</td>
+                <td className="p-4 text-white/80">{r.checkOutAt ? `${formatDateSaudi(new Date(r.checkOutAt))} ${formatTimeSaudi(new Date(r.checkOutAt))}` : "- حاضر"}</td>
                 <td className="p-4 text-white/80 max-w-[220px] break-words" title={r.checkInLateReason?.trim() || undefined}>
                   {r.checkInLateReason?.trim() || "-"}
                 </td>
