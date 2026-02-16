@@ -63,8 +63,11 @@ export async function PATCH(
   }
 }
 
+const HAS_DONATIONS_MESSAGE =
+  'هذا الموظف الذي تريد حذفه قد سجل تبرعات، وحذفك له قد يؤثر على سجلات التبرعات، الأفضل أن تعطل نشاط الموظف على أن تحذفه.';
+
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -72,11 +75,33 @@ export async function DELETE(
     const { id } = await params;
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 });
-    if (user.role === 'ADMIN') return NextResponse.json({ error: 'لا يمكن تعطيل حساب المدير' }, { status: 400 });
+    if (user.role === 'ADMIN') return NextResponse.json({ error: 'لا يمكن حذف حساب المدير' }, { status: 400 });
 
-    await prisma.$executeRaw`UPDATE "User" SET active = false WHERE id = ${id}`;
+    const donationCount = await prisma.donation.count({ where: { userId: id } });
+    const body = await req.json().catch(() => ({}));
+    const confirmDeleteWithDonations = body.confirmDeleteWithDonations === true;
+
+    if (donationCount > 0 && !confirmDeleteWithDonations) {
+      return NextResponse.json(
+        {
+          error: HAS_DONATIONS_MESSAGE,
+          hasDonations: true,
+          donationCount,
+        },
+        { status: 400 }
+      );
+    }
+
+    await prisma.user.delete({ where: { id } });
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: 'فشل التعطيل' }, { status: 403 });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : '';
+    if (message.includes('Foreign key') || message.includes('constraint')) {
+      return NextResponse.json(
+        { error: 'لا يمكن حذف الموظف بسبب وجود بيانات مرتبطة. جرّب تعطيل الحساب بدلاً من الحذف.' },
+        { status: 400 }
+      );
+    }
+    return NextResponse.json({ error: 'فشل الحذف' }, { status: 403 });
   }
 }

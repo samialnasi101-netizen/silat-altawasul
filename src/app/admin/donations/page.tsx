@@ -66,7 +66,7 @@ export default async function AdminDonationsPage({
                 <td className="p-4 text-white/80">{new Date(d.createdAt).toLocaleString('ar-SA')}</td>
                 <td className="p-4 text-white/80">{d.branch.name}</td>
                 <td className="p-4 text-white/80">{d.project.name} — {d.project.charity.name}</td>
-                <td className="p-4 text-white/80">{d.user.name} ({d.user.staffId})</td>
+                <td className="p-4 text-white/80">{d.user ? `${d.user.name} (${d.user.staffId})` : 'موظف محذوف'}</td>
                 <td className="p-4 text-white font-medium">{Number(d.amount).toLocaleString('ar-SA')} ر.س</td>
               </tr>
             ))}

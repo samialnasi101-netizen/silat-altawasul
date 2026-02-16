@@ -55,8 +55,8 @@ export async function GET(req: Request) {
       p.count += 1;
       byProject.set(pid, p);
 
-      const uid = d.userId;
-      const u = byEmployee.get(uid) ?? { total: 0, count: 0, name: d.user.name };
+      const uid = d.userId ?? '__deleted__';
+      const u = byEmployee.get(uid) ?? { total: 0, count: 0, name: d.user?.name ?? 'موظف محذوف' };
       u.total += amt;
       u.count += 1;
       byEmployee.set(uid, u);

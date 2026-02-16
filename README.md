@@ -19,7 +19,8 @@
 3. **تهيئة قاعدة البيانات**
    - على جهازك (أو في سكريبت تشغيل مرة واحدة):
      - ضع نفس `DATABASE_URL` في ملف `.env` محلي.
-     - نفّذ: `npx prisma db push`
+     - نفّذ: `npm run db:migrate` (أو `npx prisma migrate deploy`) لتطبيق التعديلات على الجداول.
+     - أو للمشاريع الجديدة بدون migrations: `npx prisma db push`
      - ثم: `npm run db:seed` لإنشاء مستخدم المدير الافتراضي.
    - بيانات الدخول الافتراضية للمدير بعد البذر:
      - **المعرف:** `admin`
@@ -56,6 +57,20 @@ npm run dev
 ## التقنيات
 
 - Next.js 14 (App Router), TypeScript, Tailwind CSS, Prisma, NextAuth.js, PostgreSQL.
+
+## تحديث قاعدة البيانات (Migrations)
+
+- **إذا كنت تستخدم Migrations** (قاعدة جديدة من migrations): نفّذ مرة واحدة:
+  ```bash
+  npm run db:migrate
+  ```
+  أو: `npx prisma migrate deploy`.
+
+- **إذا كانت القاعدة مُهيأة بـ `db push`** (مثل Neon بدون سجل migrations) وظهر خطأ P3005، نفّذ هذا الأمر SQL **مرة واحدة** من لوحة Neon (SQL Editor) أو أي عميل PostgreSQL:
+  ```sql
+  ALTER TABLE "Donation" ALTER COLUMN "userId" DROP NOT NULL;
+  ```
+  بعدها حذف الموظفين (مع الإبقاء على التبرعات) سيعمل.
 
 ## ملاحظات النشر
 

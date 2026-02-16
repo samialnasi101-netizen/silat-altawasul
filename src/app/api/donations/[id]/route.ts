@@ -25,11 +25,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
     }
 
-    if (donation.userId === userId) {
+    if (donation.userId && donation.userId === userId) {
       await prisma.donationEdit.create({
         data: {
           donationId: id,
-          userId: userId!,
+          userId: donation.userId,
           previousAmount: donation.amount,
           newAmount,
         },

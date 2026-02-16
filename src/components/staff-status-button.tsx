@@ -18,7 +18,11 @@ export default function StaffStatusButton({
   const handleDeactivate = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/staff/${staffId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/staff/${staffId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: false }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         alert(data.error || 'فشل التعطيل');

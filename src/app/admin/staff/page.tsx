@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import StaffStatusButton from '@/components/staff-status-button';
+import StaffDeleteButton from '@/components/staff-delete-button';
 
 type StaffRow = {
   id: string;
@@ -57,12 +58,13 @@ export default async function AdminStaffPage() {
                     {isActive(u) ? 'نشط' : 'معطّل'}
                   </span>
                 </td>
-                <td className="p-4 min-w-[200px]">
+                <td className="p-4 min-w-[220px]">
                   <div className="flex flex-wrap items-center gap-2">
                     <Link href={`/admin/staff/${u.id}`} className="btn-ghost text-sm shrink-0">
                       تعديل
                     </Link>
                     <StaffStatusButton staffId={u.id} active={isActive(u)} />
+                    <StaffDeleteButton staffId={u.id} staffName={u.name} />
                   </div>
                 </td>
               </tr>
